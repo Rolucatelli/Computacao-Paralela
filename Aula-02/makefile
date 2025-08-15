@@ -1,11 +1,10 @@
 # Nome do projeto
-# PROJ_NAME=hello_world
-# PROJ_NAME=hello_2
-PROJ_NAME=exercicio
+# PROJ_NAME=exercicio
 # PROJ_NAME=pingpong
+PROJ_NAME=pingpongbig
 
 # Número de Processos
-NP=20
+NP=10
 
 # Compilador
 CC=mpicc
