@@ -1,10 +1,10 @@
 # Nome do projeto
 # PROJ_NAME=exercicio
 # PROJ_NAME=pingpong
-PROJ_NAME=pingpongbig
+PROJ_NAME=contagem_anel
 
 # Número de Processos
-NP=10
+NP=16
 
 # Compilador
 CC=mpicc
@@ -21,7 +21,7 @@ RM = rm -f
 all: exeFolder $(PROJ_NAME)
 
 run: all
-	@ mpirun -np $(NP) --hostfile $(HFILE) ./exe/$(PROJ_NAME)
+	@ mpirun --oversubscribe -np $(NP) --hostfile $(HFILE) ./exe/$(PROJ_NAME)
 
 
 $(PROJ_NAME):
