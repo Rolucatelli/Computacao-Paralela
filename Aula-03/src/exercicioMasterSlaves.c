@@ -89,14 +89,11 @@ int main(int argc, char **argv)
         {
             int slave_answer = 0;
             int slave = search_free_slave(slaves, world_size);
-            puts("1");
             while (slave)
             {
-                puts("2");
-
                 operation = (rand() % OPERATIONS) + 1;
                 v_size = (rand() % MAX_VECTOR_SIZE) + 1;
-                printf("%d %d\n", operation, v_size);
+                printf("Op: %d Size: %d Request: %d\n", operation, v_size, requests);
                 int *vector = (int *)malloc(sizeof(int) * v_size);
                 for (int i = 0; i < v_size; i++)
                 {
@@ -106,19 +103,25 @@ int main(int argc, char **argv)
                 slaves[slave - 1] = 1;
 
                 MPI_Send(vector, v_size, MPI_INT, slave - 1, operation, MPI_COMM_WORLD);
-                printf("Master sent a request with %d numbers to Slave %d\n", v_size, slave);
+                printf("Master sent a request with %d numbers to Slave %d\n", v_size, slave-1);
                 requests--;
                 free(vector);
+		slave = search_free_slave(slaves, world_size);
             }
-            MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
-            MPI_Recv(&slave_answer, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            slaves[status.MPI_SOURCE] = slave_answer;
+	    if (requests > 0) {
+            	MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            	MPI_Recv(&slave_answer, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	    	printf("Slave %d has completed the task\n", status.MPI_SOURCE);
+            	slaves[status.MPI_SOURCE] = slave_answer;
+	    }
         }
+	for(int i = 0; i < world_size; i++)
+	{
+	    MPI_Send(&v_size, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+	}
     }
     else
     {
-        // Slaves devem mandar 0 para Master se estiverem livres
-
         MPI_Status status;
         int tag = -1;
         do
@@ -140,31 +143,32 @@ int main(int argc, char **argv)
                 // Stop
                 break;
             case 1:
-                printf("Calculing avarage\n");
+                printf("Process %d: Calculing avarage\n", world_rank);
                 float avg = calc_avarage(vector, v_size);
                 printf("Process %d calculed the avarage %.2f\n", world_rank, avg);
                 break;
             case 2:
-                printf("Filtering vector\n");
+                printf("Process %d: Filtering vector\n", world_rank);
 
                 filter_vect(vector, v_size);
                 printf("Process %d filtered the vector \n", world_rank);
                 break;
             case 3:
-                printf("Ordering vector\n");
+                printf("Process %d: Ordering vector\n", world_rank);
 
                 bubble_sort(vector, v_size);
                 printf("Process %d ordered the vector \n", world_rank);
                 break;
             case 4:
-                printf("Calculing sd\n");
+                printf("Process %d: Calculing sd\n", world_rank);
 
                 float sd = standard_deviation(vector, v_size);
                 printf("Process %d calculed the standard deviation %.2f\n", world_rank, sd);
                 break;
             }
+	    int msg = 0;
 
-            MPI_Send(0, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+            MPI_Send(&msg, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 
             free(vector);
         } while (tag);
