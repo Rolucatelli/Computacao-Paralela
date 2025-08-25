@@ -4,7 +4,7 @@
 PROJ_NAME=exercicioMasterSlaves
 
 # Número de Processos
-NP=8
+NP=12
 
 # Compilador
 CC=mpicc
