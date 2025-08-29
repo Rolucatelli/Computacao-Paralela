@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "mpi.h": "c",
-    "numbers": "c"
+    "numbers": "c",
+    "vector": "c"
   }
 }
