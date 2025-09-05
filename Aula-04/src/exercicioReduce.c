@@ -63,17 +63,17 @@ int main()
     if (world_rank == ROOT_PROCESS)
     {
         srand(time(NULL));
-        first_vect = (int *)malloc(sizeof(int) * first_size);
+        first_vect = (int *)calloc(sizeof(int), first_size);
         for (int i = 0; i < first_size; i++)
             first_vect[i] = (rand() % MAX_NUMBER);
         printf("%d: first_vector: ", world_rank);
         print_vect(first_vect, first_size);
     }
     recv_size = (int)ceil(first_size / world_size);
-    recv_vect = (int *)malloc(sizeof(int) * recv_size);
+    recv_vect = (int *)calloc(sizeof(int), recv_size);
     MPI_Scatter(first_vect, recv_size, MPI_INT, recv_vect, recv_size, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
 
-    int *send_vect = (int *)malloc(sizeof(int) * recv_size);
+    int *send_vect = (int *)calloc(sizeof(int), recv_size);
     MPI_Reduce(recv_vect, send_vect, recv_size, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
 
     while (recv_size > 1)
@@ -81,11 +81,11 @@ int main()
         // Realocando recv_vect
         recv_size = (int)ceil(recv_size / world_size);
         free(recv_vect);
-        recv_vect = (int *)malloc(sizeof(int) * recv_size);
+        recv_vect = (int *)calloc(sizeof(int), recv_size);
         MPI_Scatter(first_vect, recv_size, MPI_INT, recv_vect, recv_size, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
 
         free(send_vect);
-        send_vect = (int *)malloc(sizeof(int) * recv_size);
+        send_vect = (int *)calloc(sizeof(int), recv_size);
         MPI_Reduce(recv_vect, send_vect, recv_size, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
     }
 
