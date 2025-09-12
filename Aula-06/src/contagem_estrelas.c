@@ -1,7 +1,7 @@
 /*=============================================================
  *             UNIFAL - Universidade Federal de Alfenas.
  *               BACHARELADO EM CIENCIA DA COMPUTACAO.
- * Trabalho..: Multiplicação de Matrizes
+ * Trabalho..: 02 Mestre e Escravos
  * Professor.: Paulo Alexandre Bressan
  * Aluno.....: Rodrigo Luís Gasparino Lucatelli
  * Data......: 27/08/2025
@@ -14,13 +14,23 @@
 #include <math.h>
 #include <unistd.h>
 
+/**
+ * The Max size that a vector can be
+ *
+ * The operation made is:
+ * v_size = 50 + (rand() % VECTOR_SIZE) + 1;
+ *
+ * This is done so the vector has a guaranteed minimum size
+ */
 #define VECTOR_SIZE 1024
-#define MATRIX_SIZE VECTOR_SIZE *VECTOR_SIZE
-// 1024 * 128
-#define SIZE_PER_PROCESS ((int)(MATRIX_SIZE) / world_size)
+#define MATRIX_SIZE 1024 * 1024
+#define SIZE_PER_PROCESS (int)(MATRIX_SIZE) / world_size
 
 // The biggest number that can be generated to fill the vectors
 #define MAX_NUMBER 256
+
+// The amount of tasks the sistem has to process
+#define PROCESS_AMOUNT 100000
 
 #define ROOT_PROCESS 0
 
@@ -44,6 +54,19 @@ void print_vect(int *vector, int size)
     printf("\n");
 }
 
+int is_star(int pixel)
+{
+    return pixel;
+}
+
+void paint_star(int *photo, int size, int x, int y)
+{
+    if (is_star(photo[x * size + y]))
+    {
+        photo[x * size + y] = -1;
+    }
+}
+
 int main()
 {
     MPI_Init(NULL, NULL);
@@ -55,11 +78,6 @@ int main()
     int *vector_A = (int *)calloc(sizeof(int), (SIZE_PER_PROCESS));
     int *vector_B = (int *)calloc(sizeof(int), (SIZE_PER_PROCESS));
     int *matrix_B, *matrix_A;
-    int **matrix_vector_D = (int **)calloc(sizeof(int), (SIZE_PER_PROCESS));
-    for (int i = 0; i < SIZE_PER_PROCESS; i++)
-    {
-        matrix_vector_D[i] = (int *)calloc(sizeof(int), MATRIX_SIZE);
-    }
 
     if (world_rank == ROOT_PROCESS)
     {
@@ -76,48 +94,25 @@ int main()
         }
 
         matrix_A = (int *)calloc(sizeof(int), MATRIX_SIZE);
-        int *temp_matrix = (int *)calloc(sizeof(int), MATRIX_SIZE);
 
         for (int i = 0; i < VECTOR_SIZE; i++)
         {
             for (int j = 0; j < VECTOR_SIZE; j++)
             {
-                temp_matrix[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
+                matrix_A[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
             }
         }
-
-        /*----------------------------------------------*/
-        // Calculando Matriz A Transposta
-        for (int i = 0; i < VECTOR_SIZE; i++)
-        {
-            for (int j = 0; j < VECTOR_SIZE; j++)
-            {
-                matrix_A[i * VECTOR_SIZE + j] = temp_matrix[j * VECTOR_SIZE + i];
-            }
-        }
-        free(temp_matrix);
-        /*----------------------------------------------*/
     }
+
     /*----------------------------------------------*/
-    // Passando os vetores para os processos
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Scatter(matrix_A, SIZE_PER_PROCESS, MPI_INT, vector_A, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
     MPI_Scatter(matrix_B, SIZE_PER_PROCESS, MPI_INT, vector_B, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
-    /*----------------------------------------------*/
 
-    /*----------------------------------------------*/
-    // Calculando Matrizes C
     for (int i = 0; i < SIZE_PER_PROCESS; i++)
     {
-        for (int j = 0; j < VECTOR_SIZE; j++)
-        {
-            for (int k = 0; k < VECTOR_SIZE; k++)
-            {
-                matrix_vector_D[i][j * VECTOR_SIZE + k] = matrix_A[j * VECTOR_SIZE];
-            }
-        }
+        vector_B[i] = vector_B[i] + vector_A[i];
     }
-    /*----------------------------------------------*/
 
     MPI_Gather(vector_B, SIZE_PER_PROCESS, MPI_INT, matrix_B, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
     preview_vect(vector_B, SIZE_PER_PROCESS);
