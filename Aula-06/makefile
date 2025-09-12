@@ -1,7 +1,5 @@
 # Nome do projeto
-# PROJ_NAME=checkStatus
-# PROJ_NAME=probe
-PROJ_NAME=multiplicacao_matrizes
+PROJ_NAME=contagem_estrelas
 
 # Número de Processos
 NP=8

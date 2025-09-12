@@ -1,7 +1,7 @@
 /*=============================================================
  *             UNIFAL - Universidade Federal de Alfenas.
  *               BACHARELADO EM CIENCIA DA COMPUTACAO.
- * Trabalho..: 02 Mestre e Escravos
+ * Trabalho..: 02 Contagem Estrelas
  * Professor.: Paulo Alexandre Bressan
  * Aluno.....: Rodrigo Luís Gasparino Lucatelli
  * Data......: 27/08/2025
@@ -53,17 +53,53 @@ void print_vect(int *vector, int size)
     }
     printf("\n");
 }
+void print_matrix(int *matrix, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            printf("%4d ", matrix[i * size + j]);
+        }
+        printf("\n");
+    }
+}
+void fprint_matrix(FILE *file, int *matrix, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            fprintf(file, "%4d ", matrix[i * size + j]);
+        }
+        fprintf(file, "\n");
+    }
+}
 
 int is_star(int pixel)
 {
-    return pixel;
+    return pixel > 100;
 }
 
 void paint_star(int *photo, int size, int x, int y)
 {
-    if (is_star(photo[x * size + y]))
+
+    photo[x * size + y] = -1;
+    if (is_star(photo[(x + 1) * size + y]))
     {
-        photo[x * size + y] = -1;
+        paint_star(photo, size, x + 1, y);
+    }
+    if (is_star(photo[(x)*size + y + 1]))
+    {
+        paint_star(photo, size, x, y + 1);
+    }
+    if (x > 0 && is_star(photo[(x - 1) * size + y]))
+    {
+        paint_star(photo, size, x - 1, y);
+    }
+    if (y > 0 && is_star(photo[(x)*size + y - 1]))
+    {
+        paint_star(photo, size, x, y - 1);
     }
 }
 
@@ -75,53 +111,54 @@ int main()
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    int *vector_A = (int *)calloc(sizeof(int), (SIZE_PER_PROCESS));
-    int *vector_B = (int *)calloc(sizeof(int), (SIZE_PER_PROCESS));
-    int *matrix_B, *matrix_A;
+    int *photo;
 
     if (world_rank == ROOT_PROCESS)
     {
-        srand(time(NULL));
+        char file_path[256], img_type[4];
+        int rows, columns, grey_level;
+        // printf("Digite o nome da foto: ");
+        // scanf("%s", file_path);
+        // FILE *file = fopen(file_path, "r");
+        FILE *file = fopen("./img/estrelas3.pgm", "r");
 
-        matrix_B = (int *)calloc(sizeof(int), MATRIX_SIZE);
+        fscanf(file, "%s", img_type);
+        fscanf(file, "%d %d", &rows, &columns);
+        fscanf(file, "%d", &grey_level);
 
-        for (int i = 0; i < VECTOR_SIZE; i++)
+        photo = (int *)malloc(sizeof(int) * rows * columns);
+
+        /*----------------------------------------------*/
+        // Lendo a foto
+        for (int i = 0; i < rows; i++)
         {
-            for (int j = 0; j < VECTOR_SIZE; j++)
+            for (int j = 0; j < columns; j++)
             {
-                matrix_B[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
+                fscanf(file, "%d", &(photo[i * rows + j]));
             }
         }
 
-        matrix_A = (int *)calloc(sizeof(int), MATRIX_SIZE);
-
-        for (int i = 0; i < VECTOR_SIZE; i++)
+        // print_matrix(photo, rows);
+        /*----------------------------------------------*/
+        /*----------------------------------------------*/
+        // Contando estrelas
+        int star_count = 0;
+        for (int i = 0; i < rows; i++)
         {
-            for (int j = 0; j < VECTOR_SIZE; j++)
+            for (int j = 0; j < columns; j++)
             {
-                matrix_A[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
+                if (is_star(photo[i * rows + j]))
+                {
+                    paint_star(photo, rows, i, j);
+                    star_count++;
+                }
             }
         }
+        printf("Star Count: %d\n", star_count);
+        /*----------------------------------------------*/
     }
-
-    /*----------------------------------------------*/
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Scatter(matrix_A, SIZE_PER_PROCESS, MPI_INT, vector_A, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
-    MPI_Scatter(matrix_B, SIZE_PER_PROCESS, MPI_INT, vector_B, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
-
-    for (int i = 0; i < SIZE_PER_PROCESS; i++)
-    {
-        vector_B[i] = vector_B[i] + vector_A[i];
-    }
-
-    MPI_Gather(vector_B, SIZE_PER_PROCESS, MPI_INT, matrix_B, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
-    preview_vect(vector_B, SIZE_PER_PROCESS);
-    if (world_rank == ROOT_PROCESS)
-    {
-        getchar();
-        getchar();
-        print_vect(matrix_B, MATRIX_SIZE);
-    }
+    /*----------------------------------------------*/
 
     MPI_Finalize();
     return 0;

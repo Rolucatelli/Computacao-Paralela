@@ -14,7 +14,7 @@
 #include <math.h>
 #include <unistd.h>
 
-#define VECTOR_SIZE 16
+#define VECTOR_SIZE 1024
 
 // The biggest number that can be generated to fill the matrixes
 #define MAX_NUMBER 256
@@ -31,29 +31,17 @@
     MPI_Finalize(); \
     return 0;
 
-void preview_vect(int *vector, int size)
-{
-    printf("%d, %d, %d, ..., %d, %d, %d\n",
-           vector[0], vector[1], vector[2],
-           vector[size - 3], vector[size - 2], vector[size - 1]);
-}
-
-void print_vect(int *vector, int size)
+void print_matrix(int *matrix, int size)
 {
     for (int i = 0; i < size; i++)
     {
-        printf("%4d ", vector[i]);
-    }
-    printf("\n");
-}
-void fprint_vect(FILE *file, int *vector, int size)
-{
-    for (int i = 0; i < size; i++)
-    {
-        fprintf(file, "%4d ", vector[i]);
+        for (int j = 0; j < size; j++)
+        {
+            printf("%4d ", matrix[i * size + j]);
+        }
+        printf("\n");
     }
 }
-
 void fprint_matrix(FILE *file, int *matrix, int size)
 {
     for (int i = 0; i < size; i++)
@@ -91,7 +79,6 @@ int main()
 
     if (world_rank == ROOT_PROCESS)
     {
-        printf("SIZEPERPROCESS: %d", SIZE_PER_PROCESS);
         srand(time(NULL));
 
         matrix_B = (int *)calloc(sizeof(int), MATRIX_SIZE);
@@ -100,8 +87,7 @@ int main()
         {
             for (int j = 0; j < VECTOR_SIZE; j++)
             {
-                // matrix_B[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
-                matrix_B[i * VECTOR_SIZE + j] = j + i;
+                matrix_B[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
             }
         }
 
@@ -112,8 +98,7 @@ int main()
         {
             for (int j = 0; j < VECTOR_SIZE; j++)
             {
-                // temp_matrix[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
-                temp_matrix[i * VECTOR_SIZE + j] = j + i;
+                temp_matrix[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
             }
         }
         /*----------------------------------------------*/
@@ -139,9 +124,6 @@ int main()
         }
         free(temp_matrix);
         /*----------------------------------------------*/
-        FILE *mat_A_T = fopen("./matrix_A_T.txt", "w");
-        fprint_matrix(mat_A_T, matrix_A, VECTOR_SIZE);
-        fclose(mat_A_T);
     }
 
     /*----------------------------------------------*/
@@ -150,27 +132,18 @@ int main()
     MPI_Scatter(matrix_A, SIZE_PER_PROCESS, MPI_INT, vector_A, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
     MPI_Scatter(matrix_B, SIZE_PER_PROCESS, MPI_INT, vector_B, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
     /*----------------------------------------------*/
-    if (world_rank == ROOT_PROCESS)
-    {
-        FILE *vect_A = fopen("./vector_A.txt", "w");
-        fprint_vect(vect_A, vector_A, SIZE_PER_PROCESS);
-        fclose(vect_A);
-        FILE *vect_B = fopen("./vector_B.txt", "w");
-        fprint_vect(vect_B, vector_B, SIZE_PER_PROCESS);
-        fclose(vect_B);
-    }
 
     /*----------------------------------------------*/
     // Calculando Matrizes D
     int *matrix_D = (int *)calloc(sizeof(int), MATRIX_SIZE);
-
-    for (int i = 0; i < (int)VECTOR_SIZE / world_size; i++)
+    int line_count = (int)VECTOR_SIZE / world_size;
+    for (int i = 0; i < line_count; i++)
     {
         for (int j = 0; j < VECTOR_SIZE; j++)
         {
             for (int k = 0; k < VECTOR_SIZE; k++)
             {
-                matrix_D[j * VECTOR_SIZE + k] += vector_A[(i * VECTOR_SIZE) + k] * vector_B[(i * VECTOR_SIZE) + k];
+                matrix_D[j * VECTOR_SIZE + k] += vector_A[i * VECTOR_SIZE + j] * vector_B[i * VECTOR_SIZE + k];
             }
         }
     }
@@ -186,6 +159,7 @@ int main()
         FILE *mat_C = fopen("./matrix_C.txt", "w");
         fprint_matrix(mat_C, matrix_C, VECTOR_SIZE);
         fclose(mat_C);
+        print_matrix(matrix_C, VECTOR_SIZE);
     }
 
     free(matrix_C);
