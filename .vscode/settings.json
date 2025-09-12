@@ -2,6 +2,7 @@
   "files.associations": {
     "mpi.h": "c",
     "numbers": "c",
-    "vector": "c"
+    "vector": "c",
+    "algorithm": "c"
   }
 }
