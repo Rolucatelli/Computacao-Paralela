@@ -79,6 +79,7 @@ int main()
             for (int j = 0; j < VECTOR_SIZE; j++)
             {
                 matrix_B[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
+                // matrix_B[i * VECTOR_SIZE + j] = j;
             }
         }
 
@@ -90,6 +91,7 @@ int main()
             for (int j = 0; j < VECTOR_SIZE; j++)
             {
                 temp_matrix[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
+                // temp_matrix[i * VECTOR_SIZE + j] = j;
             }
         }
         /*----------------------------------------------*/
@@ -137,7 +139,7 @@ int main()
         {
             for (int k = 0; k < VECTOR_SIZE; k++)
             {
-                matrix_D[j * VECTOR_SIZE + k] += vector_A[i * VECTOR_SIZE + k] + vector_B[i * VECTOR_SIZE + k];
+                matrix_D[j * VECTOR_SIZE + k] += vector_A[i * VECTOR_SIZE + k] * vector_B[i * VECTOR_SIZE + k];
             }
         }
     }
