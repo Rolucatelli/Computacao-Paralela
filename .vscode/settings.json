@@ -2,6 +2,11 @@
   "files.associations": {
     "mpi.h": "c",
     "numbers": "c",
-    "vector": "c"
+    "vector": "c",
+    "array": "c",
+    "string_view": "c",
+    "format": "c",
+    "initializer_list": "c",
+    "span": "c"
   }
 }

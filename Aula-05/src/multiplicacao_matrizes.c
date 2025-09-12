@@ -1,7 +1,7 @@
 /*=============================================================
  *             UNIFAL - Universidade Federal de Alfenas.
  *               BACHARELADO EM CIENCIA DA COMPUTACAO.
- * Trabalho..: 02 Mestre e Escravos
+ * Trabalho..: Multiplicação de Matrizes
  * Professor.: Paulo Alexandre Bressan
  * Aluno.....: Rodrigo Luís Gasparino Lucatelli
  * Data......: 27/08/2025
@@ -14,23 +14,12 @@
 #include <math.h>
 #include <unistd.h>
 
-/**
- * The Max size that a vector can be
- *
- * The operation made is:
- * v_size = 50 + (rand() % VECTOR_SIZE) + 1;
- *
- * This is done so the vector has a guaranteed minimum size
- */
 #define VECTOR_SIZE 1024
 #define MATRIX_SIZE 1024 * 1024
-#define SIZE_PER_PROCESS (int)(MATRIX_SIZE) / world_size
+#define SIZE_PER_PROCESS (int)(MATRIX_SIZE / world_size)
 
 // The biggest number that can be generated to fill the vectors
 #define MAX_NUMBER 256
-
-// The amount of tasks the sistem has to process
-#define PROCESS_AMOUNT 100000
 
 #define ROOT_PROCESS 0
 
