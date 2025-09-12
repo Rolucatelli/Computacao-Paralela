@@ -39,9 +39,21 @@ void print_vect(int *vector, int size)
 {
     for (int i = 0; i < size; i++)
     {
-        printf("%d, ", vector[i]);
+        printf("%4d ", vector[i]);
     }
     printf("\n");
+}
+
+void fprint_matrix(FILE *file, int *matrix, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            fprintf(file, "%4d ", matrix[i * size + j]);
+        }
+        fprintf(file, "\n");
+    }
 }
 
 int main()
@@ -55,11 +67,6 @@ int main()
     int *vector_A = (int *)calloc(sizeof(int), (SIZE_PER_PROCESS));
     int *vector_B = (int *)calloc(sizeof(int), (SIZE_PER_PROCESS));
     int *matrix_B, *matrix_A;
-    int **matrix_vector_D = (int **)calloc(sizeof(int), (SIZE_PER_PROCESS));
-    for (int i = 0; i < SIZE_PER_PROCESS; i++)
-    {
-        matrix_vector_D[i] = (int *)calloc(sizeof(int), MATRIX_SIZE);
-    }
 
     if (world_rank == ROOT_PROCESS)
     {
@@ -85,6 +92,17 @@ int main()
                 temp_matrix[i * VECTOR_SIZE + j] = (rand() % MAX_NUMBER);
             }
         }
+        /*----------------------------------------------*/
+        // Salvando matrizes A e B em arquivo
+        FILE *mat_A = fopen("./matrix_A.txt", "w");
+        fprint_matrix(mat_A, temp_matrix, VECTOR_SIZE);
+        fclose(mat_A);
+
+        FILE *mat_B = fopen("./matrix_B.txt", "w");
+        fprint_matrix(mat_B, matrix_B, VECTOR_SIZE);
+        fclose(mat_B);
+
+        /*----------------------------------------------*/
 
         /*----------------------------------------------*/
         // Calculando Matriz A Transposta
@@ -97,7 +115,11 @@ int main()
         }
         free(temp_matrix);
         /*----------------------------------------------*/
+        FILE *mat_A_T = fopen("./matrix_A_T.txt", "w");
+        fprint_matrix(mat_A_T, matrix_A, VECTOR_SIZE);
+        fclose(mat_A_T);
     }
+
     /*----------------------------------------------*/
     // Passando os vetores para os processos
     MPI_Barrier(MPI_COMM_WORLD);
@@ -106,28 +128,37 @@ int main()
     /*----------------------------------------------*/
 
     /*----------------------------------------------*/
-    // Calculando Matrizes C
-    for (int i = 0; i < SIZE_PER_PROCESS; i++)
+    // Calculando Matrizes D
+    int *matrix_D = (int *)calloc(sizeof(int), MATRIX_SIZE);
+
+    for (int i = 0; i < (int)VECTOR_SIZE / world_size; i++)
     {
         for (int j = 0; j < VECTOR_SIZE; j++)
         {
             for (int k = 0; k < VECTOR_SIZE; k++)
             {
-                matrix_vector_D[i][j * VECTOR_SIZE + k] = matrix_A[j * VECTOR_SIZE];
+                matrix_D[j * VECTOR_SIZE + k] += vector_A[i * VECTOR_SIZE + k] + vector_B[i * VECTOR_SIZE + k];
             }
         }
     }
-    /*----------------------------------------------*/
 
-    MPI_Gather(vector_B, SIZE_PER_PROCESS, MPI_INT, matrix_B, SIZE_PER_PROCESS, MPI_INT, ROOT_PROCESS, MPI_COMM_WORLD);
-    preview_vect(vector_B, SIZE_PER_PROCESS);
+    /*----------------------------------------------*/
+    int *matrix_C = (int *)calloc(sizeof(int), MATRIX_SIZE);
+
+    MPI_Reduce(matrix_D, matrix_C, MATRIX_SIZE, MPI_INT, MPI_SUM, ROOT_PROCESS, MPI_COMM_WORLD);
     if (world_rank == ROOT_PROCESS)
     {
-        getchar();
-        getchar();
-        print_vect(matrix_B, MATRIX_SIZE);
+        free(matrix_A);
+        free(matrix_B);
+        FILE *mat_C = fopen("./matrix_C.txt", "w");
+        fprint_matrix(mat_C, matrix_C, VECTOR_SIZE);
+        fclose(mat_C);
     }
 
+    free(matrix_C);
+    free(matrix_D);
+    free(vector_A);
+    free(vector_B);
     MPI_Finalize();
     return 0;
 }
