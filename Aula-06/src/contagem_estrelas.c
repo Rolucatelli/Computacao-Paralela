@@ -14,23 +14,7 @@
 #include <math.h>
 #include <unistd.h>
 
-/**
- * The Max size that a vector can be
- *
- * The operation made is:
- * v_size = 50 + (rand() % VECTOR_SIZE) + 1;
- *
- * This is done so the vector has a guaranteed minimum size
- */
-#define VECTOR_SIZE 1024
-#define MATRIX_SIZE 1024 * 1024
-#define SIZE_PER_PROCESS (int)(MATRIX_SIZE) / world_size
-
-// The biggest number that can be generated to fill the vectors
-#define MAX_NUMBER 256
-
-// The amount of tasks the sistem has to process
-#define PROCESS_AMOUNT 100000
+#define STAR_TRESHOLD 100
 
 #define ROOT_PROCESS 0
 
@@ -76,28 +60,23 @@ void fprint_matrix(FILE *file, int *matrix, int size)
     }
 }
 
-int is_star(int pixel)
-{
-    return pixel > 100;
-}
-
 void paint_star(int *photo, int size, int x, int y)
 {
 
     photo[x * size + y] = -1;
-    if (is_star(photo[(x + 1) * size + y]))
+    if (photo[(x + 1) * size + y] > STAR_TRESHOLD)
     {
         paint_star(photo, size, x + 1, y);
     }
-    if (is_star(photo[(x)*size + y + 1]))
+    if (photo[(x)*size + y + 1] > STAR_TRESHOLD)
     {
         paint_star(photo, size, x, y + 1);
     }
-    if (x > 0 && is_star(photo[(x - 1) * size + y]))
+    if (x > 0 && photo[(x - 1) * size + y] > STAR_TRESHOLD)
     {
         paint_star(photo, size, x - 1, y);
     }
-    if (y > 0 && is_star(photo[(x)*size + y - 1]))
+    if (y > 0 && photo[(x)*size + y - 1] > STAR_TRESHOLD)
     {
         paint_star(photo, size, x, y - 1);
     }
@@ -112,11 +91,11 @@ int main()
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     int *photo;
+    int rows, columns, grey_level;
 
     if (world_rank == ROOT_PROCESS)
     {
         char file_path[256], img_type[4];
-        int rows, columns, grey_level;
         // printf("Digite o nome da foto: ");
         // scanf("%s", file_path);
         // FILE *file = fopen(file_path, "r");
@@ -142,24 +121,73 @@ int main()
         /*----------------------------------------------*/
         /*----------------------------------------------*/
         // Contando estrelas
-        int star_count = 0;
-        for (int i = 0; i < rows; i++)
+        // int star_count = 0;
+        // for (int i = 0; i < rows; i++)
+        // {
+        //     for (int j = 0; j < columns; j++)
+        //     {
+        //         if (is_star(photo[i * rows + j]))
+        //         {
+        //             paint_star(photo, rows, i, j);
+        //             star_count++;
+        //         }
+        //     }
+        // }
+        // printf("Star Count: %d\n", star_count);
+        /*----------------------------------------------*/
+        /*----------------------------------------------*/
+        // Enviando a foto para os outros processos
+        const int size_per_process = (int)(columns * rows / (world_size - 1)) + 1;
+        for (int i = 1; i < world_size; i++)
         {
-            for (int j = 0; j < columns; j++)
+            MPI_Send(&(photo[(i - 1) * size_per_process]), size_per_process + (i < world_size - 1 ? columns : 0), MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&columns, 1, MPI_INT, i, 2, MPI_COMM_WORLD);
+            MPI_Send(&rows, 1, MPI_INT, i, 3, MPI_COMM_WORLD);
+        }
+
+        /*----------------------------------------------*/
+    }
+    else
+    {
+        /*----------------------------------------------*/
+        // Recebendo foto
+        MPI_Status status;
+        MPI_Probe(0, 1, MPI_COMM_WORLD, &status);
+
+        int v_size;
+        MPI_Get_count(&status, MPI_INT, &v_size);
+
+        photo = (int *)malloc(sizeof(int) * v_size);
+        MPI_Recv(photo, v_size, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&columns, 1, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&rows, 1, MPI_INT, 0, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        /*----------------------------------------------*/
+        /*----------------------------------------------*/
+        // Contagem de estrelas
+        int count = 0;
+        for (int i = 0; i < v_size; i++)
+        {
+            if (photo[i] > STAR_TRESHOLD)
             {
-                if (is_star(photo[i * rows + j]))
+                paint_star(photo, v_size, i, i % columns);
+                if (world_rank != ROOT_PROCESS + 1 && i / columns < 0)
                 {
-                    paint_star(photo, rows, i, j);
-                    star_count++;
+                    /* code */
+                }
+                else
+                {
+                    count++;
                 }
             }
         }
-        printf("Star Count: %d\n", star_count);
+
         /*----------------------------------------------*/
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+
     /*----------------------------------------------*/
 
+    free(photo);
     MPI_Finalize();
     return 0;
 }
