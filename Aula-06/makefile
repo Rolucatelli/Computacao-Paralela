@@ -21,6 +21,11 @@ all: exeFolder $(PROJ_NAME)
 run: all
 	@ mpirun --oversubscribe -np $(NP) --hostfile $(HFILE) ./exe/$(PROJ_NAME)
 
+test: all
+	@ mpirun --oversubscribe -np $(NP) --hostfile $(HFILE) ./exe/$(PROJ_NAME) ./img/estrelas1.pgm
+	@ mpirun --oversubscribe -np $(NP) --hostfile $(HFILE) ./exe/$(PROJ_NAME) ./img/estrelas2.pgm
+	@ mpirun --oversubscribe -np $(NP) --hostfile $(HFILE) ./exe/$(PROJ_NAME) ./img/estrelas3.pgm
+
 
 $(PROJ_NAME):
 	@ $(CC) -o ./exe/$(PROJ_NAME) ./src/$(PROJ_NAME).c -lm
