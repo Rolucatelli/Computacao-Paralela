@@ -11,7 +11,7 @@ public class Server {
             HelloImpl obj = new HelloImpl();
             Registry registry = LocateRegistry.createRegistry(1099);
 //            registry.rebind("Hello", obj);
-            Naming.rebind("rmi://172.17.0.1/Hello", obj);
+            Naming.rebind("rmi://localhost/Hello", obj);
             System.out.println("Server ready");
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
