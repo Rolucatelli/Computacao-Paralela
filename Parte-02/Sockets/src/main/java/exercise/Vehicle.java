@@ -2,23 +2,37 @@ package exercise;
 
 import java.io.Serializable;
 
+
 public class Vehicle implements Serializable {
+    private int id;
     private String placa;
     private String marca;
     private String modelo;
-    private int ano;
+    private Integer ano;
     private String cor;
-    private int kilometragem;
-    private double valor;
+    private Integer quilometragem;
+    private Double valor;
 
 
-    public Vehicle(String placa, String marca, String modelo, int ano, String cor, int kilometragem, double valor) {
+    public Vehicle(int id, String placa, String marca, String modelo, Integer ano, String cor, Integer quilometragem, Double valor) {
+        this.id = id;
         this.placa = placa;
         this.marca = marca;
         this.modelo = modelo;
         this.ano = ano;
         this.cor = cor;
-        this.kilometragem = kilometragem;
+        this.quilometragem = quilometragem;
+        this.valor = valor;
+    }
+
+    public Vehicle(String placa, String marca, String modelo, Integer ano, String cor, Integer quilometragem, Double valor) {
+        this.id = -1;
+        this.placa = placa;
+        this.marca = marca;
+        this.modelo = modelo;
+        this.ano = ano;
+        this.cor = cor;
+        this.quilometragem = quilometragem;
         this.valor = valor;
     }
 
@@ -34,7 +48,7 @@ public class Vehicle implements Serializable {
         return modelo;
     }
 
-    public int getAno() {
+    public Integer getAno() {
         return ano;
     }
 
@@ -42,13 +56,19 @@ public class Vehicle implements Serializable {
         return cor;
     }
 
-    public int getKilometragem() {
-        return kilometragem;
+    public Integer getQuilometragem() {
+        return quilometragem;
     }
 
-    public double getValor() {
+    public Double getValor() {
         return valor;
     }
+
+    public int getId() {
+        return id;
+    }
+
+
 
     @Override
     public String toString() {
@@ -57,7 +77,7 @@ public class Vehicle implements Serializable {
                 "Placa: " + placa + "\n" +
                 "Ano: " + ano + "\n" +
                 "Cor: " + cor + "\n" +
-                "Kilometragem: " + kilometragem + "\n" +
+                "Quilometragem: " + quilometragem + "\n" +
                 "Valor: " + valor + "\n";
     }
 }

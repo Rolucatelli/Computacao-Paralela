@@ -5,6 +5,7 @@ import java.util.List;
 
 public final class VehicleManager {
     private static VehicleManager instance;
+    private int lastId=0;
 
     private VehicleManager() {
     }
@@ -18,26 +19,33 @@ public final class VehicleManager {
         return instance;
     }
 
-    public void add(Vehicle vehicle) {
-        vehicleList.add(vehicle);
+    public Vehicle createVehicle(String placa, String marca, String modelo, Integer ano, String cor, Integer quilometragem, Double valor){
+        return new Vehicle(lastId++,placa, marca, modelo, ano, cor, quilometragem, valor);
     }
 
-    public void remove(Vehicle vehicle) {
-        vehicleList.remove(vehicle);
+    public int add(Vehicle vehicle) {
+        Vehicle v = createVehicle(vehicle.getPlaca(), vehicle.getMarca(), vehicle.getModelo(), vehicle.getAno(), vehicle.getCor(), vehicle.getQuilometragem(), vehicle.getValor());
+        vehicleList.add(v);
+        return v.getId();
     }
 
-    public List<Vehicle> search(String placa, String marca, String modelo, Integer ano, String cor, Integer kilometragem, Double valor) {
+    public synchronized void remove(int id) {
+        vehicleList.removeIf(v -> v.getId() == id);
+    }
+
+    //String placa, String marca, String modelo, Integer ano, String cor, Integer quilometragem, Double valor
+    public List<Vehicle> search(Vehicle vehicle) {
         List<Vehicle> result = new ArrayList<>();
         for (Vehicle v : vehicleList) {
             boolean match = true;
 
-            if (placa != null && !v.getPlaca().equalsIgnoreCase(placa)) match = false;
-            if (marca != null && !v.getMarca().equalsIgnoreCase(marca)) match = false;
-            if (modelo != null && !v.getModelo().equalsIgnoreCase(modelo)) match = false;
-            if (ano != null && v.getAno() != ano) match = false;
-            if (cor != null && !v.getCor().equalsIgnoreCase(cor)) match = false;
-            if (kilometragem != null && v.getKilometragem() != kilometragem) match = false;
-            if (valor != null && v.getValor() != valor) match = false;
+            if (vehicle.getPlaca() != null && !v.getPlaca().equalsIgnoreCase(vehicle.getPlaca())) match = false;
+            if (vehicle.getMarca() != null && !v.getMarca().equalsIgnoreCase(vehicle.getMarca())) match = false;
+            if (vehicle.getModelo() != null && !v.getModelo().equalsIgnoreCase(vehicle.getModelo())) match = false;
+            if (vehicle.getAno() != null && !v.getAno().equals(vehicle.getAno())) match = false;
+            if (vehicle.getCor() != null && !v.getCor().equalsIgnoreCase(vehicle.getCor())) match = false;
+            if (vehicle.getQuilometragem() != null && !v.getQuilometragem().equals(vehicle.getQuilometragem())) match = false;
+            if (vehicle.getValor() != null && !v.getValor().equals(vehicle.getValor())) match = false;
 
             if (match) {
                 result.add(v);
